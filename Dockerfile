@@ -4,6 +4,14 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PORT=8080
 
 # -------------------------
+# Variables de entorno para MySQL
+# -------------------------
+ENV MYSQL_ROOT_PASSWORD=root
+ENV MYSQL_DATABASE=app_db
+ENV MYSQL_USER=app_user
+ENV MYSQL_PASSWORD=app_pass
+
+# -------------------------
 # Instalar paquetes
 # -------------------------
 RUN apt-get update && apt-get install -y \
@@ -30,15 +38,14 @@ RUN mkdir -p /var/run/mysqld /var/lib/mysql /docker-entrypoint-initdb.d \
  && chown -R mysql:mysql /var/run/mysqld /var/lib/mysql /docker-entrypoint-initdb.d
 
 # -------------------------
-# Copiar init.sql y código PHP
+# Copiar SQL de inicialización y código PHP
 # -------------------------
 COPY sql/init.sql /docker-entrypoint-initdb.d/init.sql
 COPY src/ /var/www/html/
-
 RUN chown -R www-data:www-data /var/www/html
 
 # -------------------------
-# Script de inicialización de MySQL
+# Script de inicialización de MySQL usando variables de entorno
 # -------------------------
 RUN printf "#!/bin/bash\n\
 set -e\n\
@@ -48,7 +55,16 @@ if [ ! -d /var/lib/mysql/mysql ]; then\n\
   mysqld --skip-networking &\n\
   pid=\$!\n\
   until mysqladmin ping --silent; do sleep 1; done\n\
-  mysql -u root < /docker-entrypoint-initdb.d/init.sql\n\
+  mysql -u root <<EOF\n\
+CREATE DATABASE IF NOT EXISTS \${MYSQL_DATABASE};\n\
+CREATE USER IF NOT EXISTS '\${MYSQL_USER}'@'%' IDENTIFIED BY '\${MYSQL_PASSWORD}';\n\
+GRANT ALL PRIVILEGES ON \${MYSQL_DATABASE}.* TO '\${MYSQL_USER}'@'%';\n\
+FLUSH PRIVILEGES;\n\
+EOF\n\
+  # Ejecutar init.sql si existe\n\
+  if [ -f /docker-entrypoint-initdb.d/init.sql ]; then\n\
+    mysql -u root \${MYSQL_DATABASE} < /docker-entrypoint-initdb.d/init.sql\n\
+  fi\n\
   mysqladmin shutdown\n\
 fi\n" > /usr/local/bin/mysql-init.sh \
  && chmod +x /usr/local/bin/mysql-init.sh
@@ -62,7 +78,7 @@ exec /usr/sbin/mysqld\n" > /usr/local/bin/mysql-start.sh \
  && chmod +x /usr/local/bin/mysql-start.sh
 
 # -------------------------
-# Supervisor config
+# Configuración de Supervisor
 # -------------------------
 RUN mkdir -p /etc/supervisor/conf.d
 
