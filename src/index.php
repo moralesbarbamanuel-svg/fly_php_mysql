@@ -9,7 +9,6 @@ $db   = 'app_db';
 $user = 'root';
 $pass = '';
 $charset = 'utf8mb4';
-
 echo "2. Variables configuradas<br>";
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
