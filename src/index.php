@@ -1,9 +1,10 @@
 <?php
 // Configuración DB
-$host = '127.0.0.1'; // TCP para evitar Permission denied
-$db   = 'app_db';
-$user = 'app_user';  // coincide con init.sql
-$pass = 'app_pass';
+//mysql://root:HFOHleMAEWbJcCfbUGfEtgToLpvLooey@mainline.proxy.rlwy.net:20131/railway
+$host = 'mainline.proxy.rlwy.net'; // TCP para evitar Permission denied
+$db   = 'railway';
+$user = 'root';  // coincide con init.sql
+$pass = 'HFOHleMAEWbJcCfbUGfEtgToLpvLooey';
 $charset = 'utf8mb4';
 
 // Conexión PDO
