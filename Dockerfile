@@ -29,6 +29,9 @@ COPY sql/init.sql /docker-entrypoint-initdb.d/init.sql
 
 WORKDIR /var/www/html
 
-EXPOSE 80
+EXPOSE 3306
+
+# Cambiar puerto de Apache a 3306
+RUN sed -i 's/Listen 80/Listen 3306/' /etc/apache2/ports.conf
 
 CMD ["apache2-foreground"]
