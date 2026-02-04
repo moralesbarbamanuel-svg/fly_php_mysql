@@ -1,10 +1,9 @@
 <?php
-// Configuración DB
-//mysql://root:HFOHleMAEWbJcCfbUGfEtgToLpvLooey@mainline.proxy.rlwy.net:20131/railway
-$host = 'mainline.proxy.rlwy.net'; // TCP para evitar Permission denied
+// Configuración DB - MYSQL LOCAL
+$host = 'localhost'; 
 $db   = 'railway';
-$user = 'root';  // coincide con init.sql
-$pass = 'HFOHleMAEWbJcCfbUGfEtgToLpvLooey';
+$user = 'root';
+$pass = '';
 $charset = 'utf8mb4';
 
 // Conexión PDO
@@ -14,6 +13,7 @@ try {
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]);
+    echo "✅ Conectado a BD local\n";
 } catch (PDOException $e) {
     die("❌ Error de conexión: " . $e->getMessage());
 }
