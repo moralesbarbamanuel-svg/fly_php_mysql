@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PORT=8080
+ENV PORT=3000
 
 # -------------------------
 # Instalar paquetes
@@ -11,15 +11,18 @@ RUN apt-get update && apt-get install -y \
     mysql-server \
     php \
     php-mysql \
+    php-pdo \
     libapache2-mod-php \
     supervisor \
+    curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # -------------------------
-# Apache
+# Apache config
 # -------------------------
 RUN a2enmod rewrite
+RUN a2enmod php8.1
 RUN sed -i "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf \
  && sed -i "s/:80>/:${PORT}>/" /etc/apache2/sites-enabled/000-default.conf
 
@@ -35,62 +38,48 @@ RUN mkdir -p /var/run/mysqld /docker-entrypoint-initdb.d \
 COPY sql/init.sql /docker-entrypoint-initdb.d/init.sql
 
 # -------------------------
-# Supervisor config
-# -------------------------
-RUN mkdir -p /etc/supervisor/conf.d
-
-RUN printf "[supervisord]\nnodaemon=true\n\n\
-[program:mysql]\n\
-command=/usr/sbin/mysqld\n\
-user=mysql\n\
-autorestart=true\n\
-stdout_logfile=/dev/stdout\n\
-stderr_logfile=/dev/stderr\n\n\
-[program:apache]\n\
-command=/usr/sbin/apachectl -D FOREGROUND\n\
-autorestart=true\n\
-stdout_logfile=/dev/stdout\n\
-stderr_logfile=/dev/stderr\n" \
-> /etc/supervisor/conf.d/supervisord.conf
-
-# -------------------------
-# Script de init MySQL
-# -------------------------
-RUN printf "#!/bin/bash\n\
-set -e\n\
-if [ ! -d /var/lib/mysql/mysql ]; then\n\
-  echo 'Inicializando MySQL...'\n\
-  mysqld --initialize-insecure --user=mysql\n\
-  mysqld --skip-networking &\n\
-  pid=$!\n\
-  until mysqladmin ping --silent; do sleep 1; done\n\
-  mysql < /docker-entrypoint-initdb.d/init.sql\n\
-  mysqladmin shutdown\n\
-fi\n" > /usr/local/bin/mysql-init.sh \
- && chmod +x /usr/local/bin/mysql-init.sh
-
-# -------------------------
-# Wrapper de MySQL
-# -------------------------
-RUN printf "#!/bin/bash\n\
-/usr/local/bin/mysql-init.sh\n\
-exec /usr/sbin/mysqld\n" > /usr/local/bin/mysql-start.sh \
- && chmod +x /usr/local/bin/mysql-start.sh
-
-# -------------------------
-# Actualizar Supervisor para usar wrapper
-# -------------------------
-RUN sed -i "s|/usr/sbin/mysqld|/usr/local/bin/mysql-start.sh|" \
- /etc/supervisor/conf.d/supervisord.conf
-
-# -------------------------
-# App
+# Copiar app
 # -------------------------
 WORKDIR /var/www/html
-
 COPY . /var/www/html
 RUN chown -R www-data:www-data /var/www/html
 
-EXPOSE 8080
+# -------------------------
+# Script de inicio
+# -------------------------
+RUN printf "#!/bin/bash\n\
+set -e\n\
+\n\
+# Inicializar MySQL\n\
+if [ ! -d /var/lib/mysql/mysql ]; then\n\
+  echo 'Inicializando MySQL...'\n\
+  mysqld --initialize-insecure --user=mysql --datadir=/var/lib/mysql\n\
+fi\n\
+\n\
+# Iniciar MySQL en background\n\
+/usr/sbin/mysqld --user=mysql &\n\
+MYSQL_PID=\$!\n\
+\n\
+# Esperar a que MySQL esté listo\n\
+echo 'Esperando a que MySQL inicie...'\n\
+for i in {1..30}; do\n\
+  if mysql -u root -e 'SELECT 1' &>/dev/null; then\n\
+    echo 'MySQL está listo'\n\
+    break\n\
+  fi\n\
+  sleep 1\n\
+done\n\
+\n\
+# Ejecutar init.sql si existe\n\
+if [ -f /docker-entrypoint-initdb.d/init.sql ]; then\n\
+  echo 'Ejecutando init.sql...'\n\
+  mysql -u root < /docker-entrypoint-initdb.d/init.sql\n\
+fi\n\
+\n\
+# Iniciar Apache en foreground\n\
+exec /usr/sbin/apache2ctl -D FOREGROUND\n" > /usr/local/bin/docker-entrypoint.sh \
+ && chmod +x /usr/local/bin/docker-entrypoint.sh
 
-CMD ["/usr/bin/supervisord","-c","/etc/supervisor/conf.d/supervisord.conf"]
+EXPOSE ${PORT}
+
+CMD ["/usr/local/bin/docker-entrypoint.sh"]
