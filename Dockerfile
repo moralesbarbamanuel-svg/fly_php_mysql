@@ -6,6 +6,6 @@ COPY . /app/
 
 WORKDIR /app/src
 
-EXPOSE 8080
+EXPOSE 3306
 
-CMD ["php", "-S", "0.0.0.0:8080"]
+CMD ["php", "-S", "0.0.0.0:3306"]
