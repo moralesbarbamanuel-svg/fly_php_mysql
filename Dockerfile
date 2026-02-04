@@ -1,8 +1,10 @@
-FROM php:8.1-apache-alpine
+FROM php:8.1-apache
 
 # Instalar MySQL y extensiones
-RUN apk add --no-cache mysql mysql-client \
-    && docker-php-ext-install pdo pdo_mysql mysqli
+RUN apt-get update && apt-get install -y \
+    default-mysql-server \
+    && docker-php-ext-install pdo pdo_mysql mysqli \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Habilitar mod_rewrite
 RUN a2enmod rewrite
@@ -21,25 +23,6 @@ COPY sql/init.sql /docker-entrypoint-initdb.d/init.sql
 
 WORKDIR /var/www/html
 
-EXPOSE 3000
+EXPOSE 80
 
-# Script de inicio
-RUN printf "#!/bin/sh\n\
-mkdir -p /var/lib/mysql\n\
-mysqld --initialize-insecure --user=mysql --datadir=/var/lib/mysql 2>/dev/null || true\n\
-mysqld --user=mysql --bind-address=127.0.0.1 &\n\
-MYSQL_PID=\$!\n\
-\n\
-for i in {1..30}; do\n\
-  mysql -u root -e 'SELECT 1' 2>/dev/null && break\n\
-  sleep 1\n\
-done\n\
-\n\
-if [ -f /docker-entrypoint-initdb.d/init.sql ]; then\n\
-  mysql -u root < /docker-entrypoint-initdb.d/init.sql\n\
-fi\n\
-\n\
-exec apache2-foreground\n" > /entrypoint.sh \
- && chmod +x /entrypoint.sh
-
-CMD ["/entrypoint.sh"]
+CMD ["apache2-foreground"]
