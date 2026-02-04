@@ -1,5 +1,11 @@
 FROM php:8.2-apache
 
+# Deshabilitar MPM prefork
+RUN a2dismod mpm_prefork
+
+# Habilitar MPM event
+RUN a2enmod mpm_event
+
 # Instalar MySQL y extensiones
 RUN apt-get update && apt-get install -y \
     default-mysql-server \
