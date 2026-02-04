@@ -1,23 +1,19 @@
 <?php
-// Configuración DB - MYSQL LOCAL
 $host = 'localhost'; 
 $db   = 'railway';
 $user = 'root';
 $pass = '';
 $charset = 'utf8mb4';
 
-// Conexión PDO
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
 try {
     $pdo = new PDO($dsn, $user, $pass, [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]);
-    echo "✅ Conectado a BD local\n";
 } catch (PDOException $e) {
-    die("❌ Error de conexión: " . $e->getMessage());
+    die("❌ Error: " . $e->getMessage());
 }
-
 // Consulta
 $sql = "SELECT * FROM users";
 $stmt = $pdo->query($sql);
