@@ -1,6 +1,6 @@
 <?php
 $host = 'localhost'; 
-$db   = 'railway';
+$db   = 'app_db';
 $user = 'root';
 $pass = '';
 $charset = 'utf8mb4';
