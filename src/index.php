@@ -3,7 +3,6 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 echo "1. Script iniciado<br>";
-
 $host = 'localhost'; 
 $db   = 'app_db';
 $user = 'root';
