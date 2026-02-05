@@ -1,9 +1,9 @@
 <?php
 // Configuración DB
-$host = '127.0.0.1'; // TCP para evitar Permission denied
+$host = 'mainline.proxy.rlwy.net'; // TCP para evitar Permission denied
 $db   = 'app_db';
-$user = 'app_user';  // coincide con init.sql
-$pass = 'app_pass';
+$user = 'root';  // coincide con init.sql
+$pass = 'HFOHleMAEWbJcCfbUGfEtgToLpvLooey';
 $charset = 'utf8mb4';
 
 // Conexión PDO
