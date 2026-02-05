@@ -1,9 +1,11 @@
-FROM php:8.1-apache
+FROM php:8.1-cli
 
 RUN docker-php-ext-install mysqli pdo pdo_mysql
 
-COPY ./src /var/www/html/
+COPY ./src /app
 
-EXPOSE 80
+WORKDIR /app
 
-CMD ["apache2-foreground"]
+EXPOSE 8080
+
+CMD ["php", "-S", "0.0.0.0:8080"]
