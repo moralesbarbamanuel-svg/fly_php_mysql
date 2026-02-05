@@ -1,22 +1,37 @@
 <?php
-// Configuración DB
-$host = 'mainline.proxy.rlwy.net'; // TCP para evitar Permission denied
-$db   = 'app_db';
-$user = 'root';  // coincide con init.sql
-$pass = 'HFOHleMAEWbJcCfbUGfEtgToLpvLooey';
-$charset = 'utf8mb4';
+// URL de conexión de Railway
+$mysqlUrl = 'mysql://root:HFOHleMAEWbJcCfbUGfEtgToLpvLooey@mainline.proxy.rlwy.net:20131/app_db';
 
-// Conexión PDO
-$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+// Parsear la URL
+$parts = parse_url($mysqlUrl);
+$host = $parts['host'];
+$port = $parts['port'];
+$db = ltrim($parts['path'], '/');
+$user = $parts['user'];
+$pass = $parts['pass'];
+
+$charset = 'utf8mb4';
+$dsn = "mysql:host=$host;port=$port;dbname=$db;charset=$charset";
+
 try {
     $pdo = new PDO($dsn, $user, $pass, [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]);
+    echo "✅ Conectado correctamente<br>";
+    
+    $sql = "SELECT * FROM users";
+    $stmt = $pdo->query($sql);
+    $rows = $stmt->fetchAll();
+    
+    echo "Registros: " . count($rows) . "<br>";
+    
+    foreach ($rows as $row) {
+        echo "ID: " . $row['id'] . " - Nombre: " . $row['name'] . "<br>";
+    }
 } catch (PDOException $e) {
-    die("❌ Error de conexión: " . $e->getMessage());
+    echo "❌ Error: " . $e->getMessage();
 }
-
 // Consulta
 $sql = "SELECT * FROM users";
 $stmt = $pdo->query($sql);
